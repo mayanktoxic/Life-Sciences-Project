@@ -16,13 +16,12 @@ const db = mysql.createConnection({
     database: 'practice'
 });
 
-
 db.connect((err) => {
   if (err) throw err;
   console.log('Connected to MySQL database');
 });
 
-// Authentication layer
+// Authentication Middleware
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Access denied' });
@@ -128,6 +127,38 @@ app.get('/api/indents', authenticate, (req, res) => {
     res.status(200).json({ indents: results });
   });
 });
+// Endpoint to Upload a PDF for an Indent
+app.post('/api/indents/:id/uploadPdf', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
+  const { id } = req.params;
+  const { pdf } = req.body; // Assuming the PDF is sent as a base64 string
+
+  if (!pdf) return res.status(400).json({ message: 'No PDF provided' });
+
+  const query = 'UPDATE indents SET pdf = ? WHERE id = ?';
+  db.query(query, [Buffer.from(pdf, 'base64'), id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error uploading PDF' });
+    res.status(200).json({ message: 'PDF uploaded successfully' });
+  });
+});
+
+// Endpoint to Retrieve a PDF for an Indent
+app.get('/api/indents/:id/downloadPdf', authenticate, (req, res) => {
+  const { id } = req.params;
+
+  const query = 'SELECT pdf FROM indents WHERE id = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Indent not found' });
+
+    const pdf = results[0].pdf;
+
+    if (!pdf) return res.status(404).json({ message: 'No PDF found for this indent' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="indent.pdf"');
+    res.send(pdf);
+  });
+});
 
 // --- Purchase Requests CRUD Operations ---
 app.get('/api/purchaseReqs', authenticate, (req, res) => {
@@ -172,4 +203,5 @@ app.post('/api/login', (req, res) => {
 app.listen(3000, () => {
   console.log('Server running on port 3000');
 });
+
 
