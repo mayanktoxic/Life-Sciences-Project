@@ -46,34 +46,33 @@ const authorize = (roles) => {
 };
 
 // --- Profiles CRUD Operations ---
-app.get('/api/profiles', authenticate, (req, res) => {
-  const query = 'SELECT * FROM profiles';
+app.get('/api/users', authenticate, (req, res) => {
+  const query = 'SELECT * FROM users';
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ message: 'Database error' });
     res.status(200).json({ profiles: results });
   });
 });
 
-app.post('/api/profiles', authenticate, authorize(['Super Admin']), (req, res) => {
-  const { name, role, email, startDate, endDate, isActive } = req.body;
-  const query = 'INSERT INTO profiles (name, role, email, startDate, endDate, isActive) VALUES (?, ?, ?, ?, ?, ?)';
-  db.query(query, [name, role, email, startDate, endDate, isActive], (err, result) => {
+app.post('/api/users', authenticate, authorize(['Super Admin']), (req, res) => {
+  const { id,name,email,password,designation,status } = req.body;
+  const query = 'INSERT INTO users(id,name,email,password,designation,status) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [id,name,email,password,designation,status], (err, result) => {
     if (err) return res.status(500).json({ message: 'Error adding profile' });
     res.status(201).json({ message: 'Profile added successfully' });
   });
 });
 
-app.put('/api/profiles/:id', authenticate, authorize(['Super Admin']), (req, res) => {
-  const { id } = req.params;
-  const { name, role, email, startDate, endDate, isActive } = req.body;
-  const query = 'UPDATE profiles SET name = ?, role = ?, email = ?, startDate = ?, endDate = ?, isActive = ? WHERE id = ?';
-  db.query(query, [name, role, email, startDate, endDate, isActive, id], (err, result) => {
+app.put('/api/users/:id', authenticate, authorize(['Super Admin']), (req, res) => {
+  // const { id }  = req.params;
+  const {id,name,email,password,designation,status } = req.body;
+  db.query('UPDATE profiles SET id = ?, name = ?, email = ?, password = ?, designation = ?, status = ? WHERE id = ?', [id1,name,email,password,designation,status], (err, result) => {
     if (err) return res.status(500).json({ message: 'Error updating profile' });
     res.status(200).json({ message: 'Profile updated successfully' });
   });
 });
 
-app.delete('/api/profiles/:id', authenticate, authorize(['Super Admin']), (req, res) => {
+app.delete('/api/users/:id', authenticate, authorize(['Super Admin']), (req, res) => {
   const { id } = req.params;
   const query = 'DELETE FROM profiles WHERE id = ?';
   db.query(query, [id], (err, result) => {
@@ -119,7 +118,7 @@ app.delete('/api/projects/:id', authenticate, authorize(['Super Admin', 'Admin(P
   });
 });
 
-// --- Indents CRUD Operations ---
+// --- Indents CRUD Operations ---// --- Indents CRUD Operations ---
 app.get('/api/indents', authenticate, (req, res) => {
   const query = 'SELECT * FROM indents';
   db.query(query, (err, results) => {
@@ -127,6 +126,71 @@ app.get('/api/indents', authenticate, (req, res) => {
     res.status(200).json({ indents: results });
   });
 });
+
+// Endpoint to Add an Indent - Scientists (PIs) are not allowed
+app.post('/api/indents', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
+  const { title, description, amount } = req.body;
+  const query = 'INSERT INTO indents (title, description, amount) VALUES (?, ?, ?)';
+  db.query(query, [title, description, amount], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding indent' });
+    res.status(201).json({ message: 'Indent added successfully' });
+  });
+});
+
+// Endpoint to Update an Indent - Scientists (PIs) are not allowed
+app.put('/api/indents/:id', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
+  const { id } = req.params;
+  const { title, description, amount } = req.body;
+  const query = 'UPDATE indents SET title = ?, description = ?, amount = ? WHERE id = ?';
+  db.query(query, [title, description, amount, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating indent' });
+    res.status(200).json({ message: 'Indent updated successfully' });
+  });
+});
+
+// Endpoint to Delete an Indent - Scientists (PIs) are not allowed
+app.delete('/api/indents/:id', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM indents WHERE id = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting indent' });
+    res.status(200).json({ message: 'Indent deleted successfully' });
+  });
+});
+
+// Endpoint to Upload a PDF for an Indent - Scientists (PIs) are not allowed
+app.post('/api/indents/:id/uploadPdf', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
+  const { id } = req.params;
+  const { pdf } = req.body; // Assuming the PDF is sent as a base64 string
+
+  if (!pdf) return res.status(400).json({ message: 'No PDF provided' });
+
+  const query = 'UPDATE indents SET pdf = ? WHERE id = ?';
+  db.query(query, [Buffer.from(pdf, 'base64'), id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error uploading PDF' });
+    res.status(200).json({ message: 'PDF uploaded successfully' });
+  });
+});
+
+// Endpoint to Retrieve a PDF for an Indent - Scientists (PIs) are allowed
+app.get('/api/indents/:id/downloadPdf', authenticate, (req, res) => {
+  const { id } = req.params;
+
+  const query = 'SELECT pdf FROM indents WHERE id = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Indent not found' });
+
+    const pdf = results[0].pdf;
+
+    if (!pdf) return res.status(404).json({ message: 'No PDF found for this indent' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="indent.pdf"');
+    res.send(pdf);
+  });
+});
+
 // Endpoint to Upload a PDF for an Indent
 app.post('/api/indents/:id/uploadPdf', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
   const { id } = req.params;
