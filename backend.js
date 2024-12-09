@@ -3,7 +3,7 @@ const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-
+console.log(process.env.SECRET_KEY);
 // Create Express App
 const app = express();
 app.use(express.json());
@@ -22,24 +22,28 @@ db.connect((err) => {
 });
 
 // Authentication Middleware
+
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Access denied' });
-
+  console.log(token);
   try {
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    const decoded = jwt.decode(token, "mySecret123");
+    console.log(decoded);
     req.user = decoded;
+    console.log(req);
     next();
   } catch (err) {
+    console.log(err);
     return res.status(400).json({ message: 'Invalid token' });
   }
 };
-
 // Role-based Authorization Middleware
 const authorize = (roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Permission denied' });
+    console.log(req.body.role);
+    if (!roles.includes(req.body.role)) {
+    return res.status(403).json({ message: 'Permission denied' });
     }
     next();
   };
@@ -56,28 +60,29 @@ app.get('/api/users', authenticate, (req, res) => {
 
 app.post('/api/users', authenticate, authorize(['Super Admin']), (req, res) => {
   const { id,name,email,password,designation,status } = req.body;
+  
   const query = 'INSERT INTO users(id,name,email,password,designation,status) VALUES (?, ?, ?, ?, ?, ?)';
   db.query(query, [id,name,email,password,designation,status], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Error adding profile' });
+    if (err) return res.status(500).json({ message: 'Error adding profile', err : err.message });
     res.status(201).json({ message: 'Profile added successfully' });
   });
 });
 
-app.put('/api/users/:id', authenticate, authorize(['Super Admin']), (req, res) => {
+app.put('/api/users', authenticate, authorize(['Super Admin']), (req, res) => {
   // const { id }  = req.params;
   const {id,name,email,password,designation,status } = req.body;
-  db.query('UPDATE profiles SET id = ?, name = ?, email = ?, password = ?, designation = ?, status = ? WHERE id = ?', [id1,name,email,password,designation,status], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Error updating profile' });
+  db.query('UPDATE users SET id = ?, name = ?, email = ?, password = ?, designation = ?, status = ? WHERE id = ?', [id,name,email,password,designation,status,id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating profile',message : err.message });
     res.status(200).json({ message: 'Profile updated successfully' });
   });
 });
 
-app.delete('/api/users/:id', authenticate, authorize(['Super Admin']), (req, res) => {
-  const { id } = req.params;
-  const query = 'DELETE FROM profiles WHERE id = ?';
+app.delete('/api/users/', authenticate, authorize(['Super Admin']), (req, res) => {
+  const { id } = req.body;
+  const query = 'DELETE FROM users WHERE id = ?';
   db.query(query, [id], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Error deleting profile' });
-    res.status(200).json({ message: 'Profile deleted successfully' });
+    if (err) return res.status(500).json({ message: 'Error deleting profile' , message : err.message });
+    res.status(200).json({ message: 'Profile deleted successfully'});
   });
 });
 
@@ -91,29 +96,29 @@ app.get('/api/projects', authenticate, (req, res) => {
 });
 
 app.post('/api/projects', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
-  const { title, capital, fundedBy, startDate, endDate } = req.body;
-  const query = 'INSERT INTO projects (title, capital, fundedBy, startDate, endDate) VALUES (?, ?, ?, ?, ?)';
-  db.query(query, [title, capital, fundedBy, startDate, endDate], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Error adding project' });
+  const { ProjectTitle, ProjectNo, ProjectStartDate, ProjectEndDate,SanctionOrderNo,TotalSanctionamount,PIname,CoPIs,ManpowerAllocationAmt,ConsumablesAllocationAmt,ContingencyAllocationAmt,OverheadAllocationAmt,EquipmentAllocationAmt,TravelAllocationAmt } = req.body;
+  const query = 'INSERT INTO projects (ProjectTitle, ProjectNo, ProjectStartDate, ProjectEndDate,SanctionOrderNo,TotalSanctionamount,PIname,CoPIs,ManpowerAllocationAmt,ConsumablesAllocationAmt,ContingencyAllocationAmt,OverheadAllocationAmt,EquipmentAllocationAmt,TravelAllocationAmt ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )';
+  db.query(query, [ProjectTitle, ProjectNo, ProjectStartDate, ProjectEndDate,SanctionOrderNo,TotalSanctionamount,PIname,CoPIs,ManpowerAllocationAmt,ConsumablesAllocationAmt,ContingencyAllocationAmt,OverheadAllocationAmt,EquipmentAllocationAmt,TravelAllocationAmt], (err, result) => {
+    if (err) {console.log(err);return res.status(500).json({ message: 'Error adding project', message2 : err.message })};
     res.status(201).json({ message: 'Project added successfully' });
   });
 });
 
 app.put('/api/projects/:id', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
-  const { id } = req.params;
-  const { title, capital, fundedBy, startDate, endDate } = req.body;
-  const query = 'UPDATE projects SET title = ?, capital = ?, fundedBy = ?, startDate = ?, endDate = ? WHERE id = ?';
-  db.query(query, [title, capital, fundedBy, startDate, endDate, id], (err, result) => {
+  const { id } = req.body;
+  const { ProjectTitle, ProjectNo, ProjectStartDate, ProjectEndDate,SanctionOrderNo,TotalSanctionamount,PIname,CoPIs,ManpowerAllocationAmt,ConsumablesAllocationAmt,ContingencyAllocationAmt,OverheadAllocationAmt,EquipmentAllocationAmt,TravelAllocationAmt } = req.body;
+  const query = 'UPDATE projects SET ProjectTitle = ?, ProjectNo = ?, ProjectStartDate = ?, ProjectEndDate = ?, SanctionOrderNo = ?, TotalSanctionamount = ?, PIname = ?, CoPIs = ?, ManpowerAllocationAmt = ?, ConsumablesAllocationAmt = ?, ContingencyAllocationAmt = ?, OverheadAllocationAmt = ?, EquipmentAllocationAmt = ?, TravelAllocationAmt = ? WHERE id = ?';
+  db.query(query, [ProjectTitle, ProjectNo, ProjectStartDate, ProjectEndDate,SanctionOrderNo,TotalSanctionamount,PIname,CoPIs,ManpowerAllocationAmt,ConsumablesAllocationAmt,ContingencyAllocationAmt,OverheadAllocationAmt,EquipmentAllocationAmt,TravelAllocationAmt], (err, result) => {
     if (err) return res.status(500).json({ message: 'Error updating project' });
     res.status(200).json({ message: 'Project updated successfully' });
   });
 });
 
 app.delete('/api/projects/:id', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
-  const { id } = req.params;
-  const query = 'DELETE FROM projects WHERE id = ?';
+  const { id } = req.body;
+  const query = 'DELETE FROM projects WHERE ProjectNo = ?';
   db.query(query, [id], (err, result) => {
-    if (err) return res.status(500).json({ message: 'Error deleting project' });
+    if (err){console.log(err);return res.status(500).json({ message: 'Error deleting project' })};
     res.status(200).json({ message: 'Project deleted successfully' });
   });
 });
@@ -141,6 +146,7 @@ app.post('/api/indents', authenticate, authorize(['Super Admin', 'Admin(PME)']),
 app.put('/api/indents/:id', authenticate, authorize(['Super Admin', 'Admin(PME)']), (req, res) => {
   const { id } = req.params;
   const { title, description, amount } = req.body;
+  
   const query = 'UPDATE indents SET title = ?, description = ?, amount = ? WHERE id = ?';
   db.query(query, [title, description, amount, id], (err, result) => {
     if (err) return res.status(500).json({ message: 'Error updating indent' });
