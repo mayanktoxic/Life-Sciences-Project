@@ -231,13 +231,429 @@ app.get('/api/indents/:id/downloadPdf', authenticate, (req, res) => {
 });
 
 // --- Purchase Requests CRUD Operations ---
-app.get('/api/purchaseReqs', authenticate, (req, res) => {
-  const query = 'SELECT * FROM purchase_reqs';
+
+// Get all purchase requests
+app.get('/api/purchaseRequests', authenticate, (req, res) => {
+  const query = 'SELECT * FROM purchase_requests';
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ message: 'Database error' });
-    res.status(200).json({ purchaseReqs: results });
+    res.status(200).json({ purchaseRequests: results });
   });
 });
+
+// Get a single purchase request by ID
+app.get('/api/purchaseRequests/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM purchase_requests WHERE PurchaseReqID = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Purchase request not found' });
+    res.status(200).json({ purchaseRequest: results[0] });
+  });
+});
+
+// Create a new purchase request
+app.post('/api/purchaseRequests', authenticate, (req, res) => {
+  const { PRDate, ProjectNo, IndentID, PurchaseRequestAmount, PRRequestor, PRStatus } = req.body;
+  const query = 'INSERT INTO purchase_requests (PRDate, ProjectNo, IndentID, PurchaseRequestAmount, PRRequestor, PRStatus) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [PRDate, ProjectNo, IndentID, PurchaseRequestAmount, PRRequestor, PRStatus], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding purchase request' });
+    res.status(201).json({ message: 'Purchase request added successfully' });
+  });
+});
+
+// Update a purchase request
+app.put('/api/purchaseRequests/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { PRDate, ProjectNo, IndentID, PurchaseRequestAmount, PRRequestor, PRStatus } = req.body;
+  const query = 'UPDATE purchase_requests SET PRDate = ?, ProjectNo = ?, IndentID = ?, PurchaseRequestAmount = ?, PRRequestor = ?, PRStatus = ? WHERE PurchaseReqID = ?';
+  db.query(query, [PRDate, ProjectNo, IndentID, PurchaseRequestAmount, PRRequestor, PRStatus, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating purchase request' });
+    res.status(200).json({ message: 'Purchase request updated successfully' });
+  });
+});
+
+// Delete a purchase request
+app.delete('/api/purchaseRequests/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM purchase_requests WHERE PurchaseReqID = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting purchase request' });
+    res.status(200).json({ message: 'Purchase request deleted successfully' });
+  });
+});
+
+// --- Purchase Orders CRUD Operations ---
+
+// Get all purchase orders
+app.get('/api/purchaseOrders', authenticate, (req, res) => {
+  const query = 'SELECT * FROM purchase_orders';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ purchaseOrders: results });
+  });
+});
+
+// Get a single purchase order by ID
+app.get('/api/purchaseOrders/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM purchase_orders WHERE PurchaseOrderID = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Purchase order not found' });
+    res.status(200).json({ purchaseOrder: results[0] });
+  });
+});
+
+// Create a new purchase order
+app.post('/api/purchaseOrders', authenticate, (req, res) => {
+  const { PODate, ProjectNo, PurchaseReqID, PurchaseOrderAmount, PORequestor, POStatus } = req.body;
+  const query = 'INSERT INTO purchase_orders (PODate, ProjectNo, PurchaseReqID, PurchaseOrderAmount, PORequestor, POStatus) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [PODate, ProjectNo, PurchaseReqID, PurchaseOrderAmount, PORequestor, POStatus], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding purchase order' });
+    res.status(201).json({ message: 'Purchase order added successfully' });
+  });
+});
+
+// Update a purchase order
+app.put('/api/purchaseOrders/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { PODate, ProjectNo, PurchaseReqID, PurchaseOrderAmount, PORequestor, POStatus } = req.body;
+  const query = 'UPDATE purchase_orders SET PODate = ?, ProjectNo = ?, PurchaseReqID = ?, PurchaseOrderAmount = ?, PORequestor = ?, POStatus = ? WHERE PurchaseOrderID = ?';
+  db.query(query, [PODate, ProjectNo, PurchaseReqID, PurchaseOrderAmount, PORequestor, POStatus, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating purchase order' });
+    res.status(200).json({ message: 'Purchase order updated successfully' });
+  });
+});
+
+// Delete a purchase order
+app.delete('/api/purchaseOrders/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM purchase_orders WHERE PurchaseOrderID = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting purchase order' });
+    res.status(200).json({ message: 'Purchase order deleted successfully' });
+  });
+});
+
+// --- Manpower CRUD Operations ---
+
+// Get all manpower records
+app.get('/api/manpower', authenticate, (req, res) => {
+  const query = 'SELECT * FROM manpower';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ manpower: results });
+  });
+});
+
+// Get a specific manpower record by ID
+app.get('/api/manpower/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM manpower WHERE ManpowerId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Manpower record not found' });
+    res.status(200).json({ manpower: results[0] });
+  });
+});
+
+// Create a new manpower record
+app.post('/api/manpower', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, ManPowerRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO manpower (ProjectNo, ProjectTitle, ManPowerRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, ManPowerRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding manpower record' });
+    res.status(201).json({ message: 'Manpower record added successfully' });
+  });
+});
+
+// Update a manpower record by ID
+app.put('/api/manpower/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, ManPowerRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE manpower SET ProjectNo = ?, ProjectTitle = ?, ManPowerRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE ManpowerId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, ManPowerRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating manpower record' });
+    res.status(200).json({ message: 'Manpower record updated successfully' });
+  });
+});
+
+// Delete a manpower record by ID
+app.delete('/api/manpower/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM manpower WHERE ManpowerId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting manpower record' });
+    res.status(200).json({ message: 'Manpower record deleted successfully' });
+  });
+});
+
+// --- Consumables CRUD Operations ---
+
+// Get all consumables records
+app.get('/api/consumables', authenticate, (req, res) => {
+  const query = 'SELECT * FROM consumables';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ consumables: results });
+  });
+});
+
+// Get a specific consumables record by ID
+app.get('/api/consumables/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM consumables WHERE ConsumablesId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Consumables record not found' });
+    res.status(200).json({ consumables: results[0] });
+  });
+});
+
+// Create a new consumables record
+app.post('/api/consumables', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, ConsumablesRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO consumables (ProjectNo, ProjectTitle, ConsumablesRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, ConsumablesRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding consumables record' });
+    res.status(201).json({ message: 'Consumables record added successfully' });
+  });
+});
+
+// Update a consumables record by ID
+app.put('/api/consumables/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, ConsumablesRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE consumables SET ProjectNo = ?, ProjectTitle = ?, ConsumablesRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE ConsumablesId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, ConsumablesRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating consumables record' });
+    res.status(200).json({ message: 'Consumables record updated successfully' });
+  });
+});
+
+// Delete a consumables record by ID
+app.delete('/api/consumables/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM consumables WHERE ConsumablesId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting consumables record' });
+    res.status(200).json({ message: 'Consumables record deleted successfully' });
+  });
+});
+
+// --- Contingency CRUD Operations ---
+
+// Get all contingency records
+app.get('/api/contingency', authenticate, (req, res) => {
+  const query = 'SELECT * FROM contingency';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ contingency: results });
+  });
+});
+
+// Get a specific contingency record by ID
+app.get('/api/contingency/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM contingency WHERE ContingencyId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Contingency record not found' });
+    res.status(200).json({ contingency: results[0] });
+  });
+});
+
+// Create a new contingency record
+app.post('/api/contingency', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, ContingencyRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO contingency (ProjectNo, ProjectTitle, ContingencyRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, ContingencyRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding contingency record' });
+    res.status(201).json({ message: 'Contingency record added successfully' });
+  });
+});
+
+// Update a contingency record by ID
+app.put('/api/contingency/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, ContingencyRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE contingency SET ProjectNo = ?, ProjectTitle = ?, ContingencyRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE ContingencyId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, ContingencyRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating contingency record' });
+    res.status(200).json({ message: 'Contingency record updated successfully' });
+  });
+});
+
+// Delete a contingency record by ID
+app.delete('/api/contingency/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM contingency WHERE ContingencyId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting contingency record' });
+    res.status(200).json({ message: 'Contingency record deleted successfully' });
+  });
+});
+
+// --- Equipment CRUD Operations ---
+
+// Get all equipment records
+app.get('/api/equipment', authenticate, (req, res) => {
+  const query = 'SELECT * FROM equipment';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ equipment: results });
+  });
+});
+
+// Get a specific equipment record by ID
+app.get('/api/equipment/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM equipment WHERE EquipmentId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Equipment record not found' });
+    res.status(200).json({ equipment: results[0] });
+  });
+});
+
+// Create a new equipment record
+app.post('/api/equipment', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, EquipmentRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO equipment (ProjectNo, ProjectTitle, EquipmentRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, EquipmentRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding equipment record' });
+    res.status(201).json({ message: 'Equipment record added successfully' });
+  });
+});
+
+// Update an equipment record by ID
+app.put('/api/equipment/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, EquipmentRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE equipment SET ProjectNo = ?, ProjectTitle = ?, EquipmentRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE EquipmentId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, EquipmentRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating equipment record' });
+    res.status(200).json({ message: 'Equipment record updated successfully' });
+  });
+});
+
+// Delete an equipment record by ID
+app.delete('/api/equipment/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM equipment WHERE EquipmentId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting equipment record' });
+    res.status(200).json({ message: 'Equipment record deleted successfully' });
+  });
+});
+
+// --- Overheads CRUD Operations ---
+
+// Get all overhead records
+app.get('/api/overheads', authenticate, (req, res) => {
+  const query = 'SELECT * FROM overheads';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ overheads: results });
+  });
+});
+
+// Get a specific overhead record by ID
+app.get('/api/overheads/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM overheads WHERE OverheadId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Overhead record not found' });
+    res.status(200).json({ overhead: results[0] });
+  });
+});
+
+// Create a new overhead record
+app.post('/api/overheads', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, OverheadRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO overheads (ProjectNo, ProjectTitle, OverheadRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, OverheadRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding overhead record' });
+    res.status(201).json({ message: 'Overhead record added successfully' });
+  });
+});
+
+// Update an overhead record by ID
+app.put('/api/overheads/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, OverheadRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE overheads SET ProjectNo = ?, ProjectTitle = ?, OverheadRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE OverheadId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, OverheadRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating overhead record' });
+    res.status(200).json({ message: 'Overhead record updated successfully' });
+  });
+});
+
+// Delete an overhead record by ID
+app.delete('/api/overheads/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM overheads WHERE OverheadId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting overhead record' });
+    res.status(200).json({ message: 'Overhead record deleted successfully' });
+  });
+});
+
+// --- Travel CRUD Operations ---
+
+// Get all travel records
+app.get('/api/travel', authenticate, (req, res) => {
+  const query = 'SELECT * FROM travel';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    res.status(200).json({ travel: results });
+  });
+});
+
+// Get a specific travel record by ID
+app.get('/api/travel/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'SELECT * FROM travel WHERE TravelId = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Travel record not found' });
+    res.status(200).json({ travel: results[0] });
+  });
+});
+
+// Create a new travel record
+app.post('/api/travel', authenticate, (req, res) => {
+  const { ProjectNo, ProjectTitle, TravelRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'INSERT INTO travel (ProjectNo, ProjectTitle, TravelRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [ProjectNo, ProjectTitle, TravelRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error adding travel record' });
+    res.status(201).json({ message: 'Travel record added successfully' });
+  });
+});
+
+// Update a travel record by ID
+app.put('/api/travel/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const { ProjectNo, ProjectTitle, TravelRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy } = req.body;
+  const query = 'UPDATE travel SET ProjectNo = ?, ProjectTitle = ?, TravelRequestedAmt = ?, IndentID = ?, RequestedMonth = ?, RequestedYear = ?, BillCopy = ? WHERE TravelId = ?';
+  db.query(query, [ProjectNo, ProjectTitle, TravelRequestedAmt, IndentID, RequestedMonth, RequestedYear, BillCopy, id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating travel record' });
+    res.status(200).json({ message: 'Travel record updated successfully' });
+  });
+});
+
+// Delete a travel record by ID
+app.delete('/api/travel/:id', authenticate, (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM travel WHERE TravelId = ?';
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting travel record' });
+    res.status(200).json({ message: 'Travel record deleted successfully' });
+  });
+});
+
 
 // --- User Registration & Authentication ---
 app.post('/api/signup', (req, res) => {
